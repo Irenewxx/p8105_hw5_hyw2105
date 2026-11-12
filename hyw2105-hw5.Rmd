@@ -10,3 +10,62 @@ library(tidyverse)
 set.seed(1236)
 ```
 
+
+### Problem 1 — Birthday Paradox Simulation
+```{r p1-01-birthday-function}
+birthday_sim = function(n) {
+
+  birthdays = sample(
+    x = 1:365,
+    size = n,
+    replace = TRUE
+  )
+
+  shared_birthday = any(duplicated(birthdays))
+
+  return(shared_birthday)
+}
+```
+
+```{r p1-02-birthday-probability}
+birthday_prob = function(n) {
+
+  sim_results = map_lgl(
+    1:10000,
+    \(i) birthday_sim(n = n)
+  )
+
+  estimated_prob = mean(sim_results)
+
+  return(estimated_prob)
+}
+```
+
+```{r p1-03-all-group-sizes}
+birthday_df =
+  tibble(group_size = 2:50) |>
+  mutate(
+    probability = map_dbl(group_size, birthday_prob)
+  )
+
+birthday_df |>
+  knitr::kable(digits = 3)
+```
+
+```{r p1-04-birthday-plot, fig.width=8, fig.height=5}
+birthday_df |>
+  ggplot(aes(x = group_size, y = probability)) +
+  geom_line() +
+  geom_point() +
+  labs(
+    title = "Probability of at Least Two People Sharing a Birthday",
+    x = "Group Size",
+    y = "Estimated Probability"
+  )
+```
+
+The estimated probability that at least two people share a birthday generally 
+increases with group size. The probability is only 0.25% for a group of two people 
+but rises to 50.4% for a group of 23 people and reaches 97.1% for a group of 50 people. 
+Although these results may initially seem surprising, the number of possible pairs 
+increases rapidly as group size grows, making a shared birthday increasingly likely.
