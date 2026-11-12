@@ -1,0 +1,12 @@
+---
+title: "P8105 Homework 5"
+author: "Irene Wen"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+
+set.seed(1236)
+```
+
