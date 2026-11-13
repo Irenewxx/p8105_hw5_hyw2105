@@ -12,6 +12,7 @@ set.seed(1236)
 
 
 ### Problem 1 — Birthday Paradox Simulation
+## Birthday Simulation Function
 ```{r p1-01-birthday-function}
 birthday_sim = function(n) {
 
@@ -27,6 +28,8 @@ birthday_sim = function(n) {
 }
 ```
 
+
+## Estimating the Shared Birthday Probability
 ```{r p1-02-birthday-probability}
 birthday_prob = function(n) {
 
@@ -41,6 +44,8 @@ birthday_prob = function(n) {
 }
 ```
 
+
+## Simulation Results Across Group Sizes
 ```{r p1-03-all-group-sizes}
 birthday_df =
   tibble(group_size = 2:50) |>
@@ -52,6 +57,8 @@ birthday_df |>
   knitr::kable(digits = 3)
 ```
 
+
+## Birthday Probability Plot
 ```{r p1-04-birthday-plot, fig.width=8, fig.height=5}
 birthday_df |>
   ggplot(aes(x = group_size, y = probability)) +
@@ -65,13 +72,14 @@ birthday_df |>
 ```
 
 The estimated probability that at least two people share a birthday generally 
-increases with group size. The probability is only 0.25% for a group of two people 
-but rises to 50.4% for a group of 23 people and reaches 97.1% for a group of 50 people. 
+increases with group size. The probability is only 0.4% for a group of two people 
+but rises to 50.8% for a group of 23 people and reaches 97.1% for a group of 50 people. 
 Although these results may initially seem surprising, the number of possible pairs 
 increases rapidly as group size grows, making a shared birthday increasingly likely.
 
 
 ### Problem 2 — Longitudinal Study and Spaghetti Plot
+## Listing Study Files
 ```{r p2-01-file-names}
 subject_files =
   tibble(
@@ -86,6 +94,8 @@ subject_files |>
   knitr::kable()
 ```
 
+
+## Importing and Combining CSV Files
 ```{r p2-02-import-data}
 subject_data =
   subject_files |>
@@ -108,6 +118,8 @@ full_df |>
   knitr::kable(digits = 2)
 ```
 
+
+## Reshaping to Tidy Longitudinal Data
 ```{r p2-04-tidy-data}
 tidy_df =
   full_df |>
@@ -133,6 +145,8 @@ tidy_df |>
   knitr::kable(digits = 2)
 ```
 
+
+## Data Validation
 ```{r p2-05-check-data}
 nrow(tidy_df)
 
@@ -149,6 +163,8 @@ tidy_df |>
   knitr::kable()
 ```
 
+
+## Spaghetti Plot
 ```{r p2-06-spaghetti-plot, fig.width=9, fig.height=5}
 tidy_df |>
   ggplot(
@@ -170,6 +186,8 @@ tidy_df |>
   )
 ```
 
+
+## Weekly Mean Outcomes by Study Arm
 ```{r p2-07-weekly-summary}
 week_summary =
   tidy_df |>
@@ -197,3 +215,192 @@ Although individual trajectories vary within both groups,
 the increase is more pronounced in the experimental group. 
 These descriptive findings suggest differences in longitudinal outcome patterns 
 between the two study arms, but the plot alone cannot establish a causal treatment effect.
+
+
+
+### Problem 3 — Statistical Power Simulation
+## Simulation Function
+```{r p3-01-ttest-function}
+sim_ttest = function(n, mu, sigma = 5) {
+
+  sim_data =
+    tibble(
+      x = rnorm(
+        n = n,
+        mean = mu,
+        sd = sigma
+      )
+    )
+
+  test_result = t.test(
+    sim_data |> pull(x),
+    mu = 0
+  )
+
+  tidy_result =
+    test_result |>
+    broom::tidy() |>
+    select(estimate, p.value)
+
+  return(tidy_result)
+}
+```
+
+
+## Simulation Results
+```{r p3-02-full-simulation}
+simulation_results =
+  expand_grid(
+    true_mu = 0:6,
+    iter = 1:5000
+  ) |>
+  mutate(
+    result = map(
+      true_mu,
+      \(mu) sim_ttest(n = 30, mu = mu, sigma = 5)
+    )
+  ) |>
+  unnest(cols = result) |>
+  mutate(
+    reject_null = p.value < 0.05
+  )
+```
+
+
+## Statistical Power
+```{r p3-03-power-summary}
+power_df =
+  simulation_results |>
+  group_by(true_mu) |>
+  summarize(
+    power = mean(reject_null),
+    .groups = "drop"
+  )
+
+power_df |>
+  knitr::kable(digits = 3)
+```
+
+```{r p3-04-power-plot, fig.width=8, fig.height=5}
+power_df |>
+  ggplot(aes(x = true_mu, y = power)) +
+  geom_line() +
+  geom_point() +
+  labs(
+    title = "Rejection Probability by True Population Mean",
+    x = "True Population Mean",
+    y = "Rejection Proportion (Power for Nonzero Means)"
+  )
+```
+
+The rejection probability increases as the true population mean moves farther 
+from the null value of zero. With the sample size (n = 30) and population 
+standard deviation (sigma = 5) held constant, statistical power increases 
+with effect size. When the true mean is zero, the rejection proportion is 0.046, 
+close to the specified significance level of 0.05. As the true mean increases 
+from 1 to 3, statistical power rises from 0.186 to 0.988, reaching 0.990 at a 
+true mean of 4. For larger true means (5 and 6), the estimated power approaches 1, 
+indicating a very high probability of rejecting the null hypothesis when it is false.
+
+
+
+## Average Estimated Mean Across All Samples
+```{r p3-05-all-estimates}
+all_estimates_df =
+  simulation_results |>
+  group_by(true_mu) |>
+  summarize(
+    avg_mu_hat = mean(estimate),
+    .groups = "drop"
+  )
+
+all_estimates_df |>
+  knitr::kable(digits = 3)
+```
+
+
+```{r p3-06-all-estimates-plot, fig.width=8, fig.height=5}
+all_estimates_df |>
+  ggplot(aes(x = true_mu, y = avg_mu_hat)) +
+  geom_line() +
+  geom_point() +
+  geom_abline(
+    intercept = 0,
+    slope = 1,
+    linetype = "dashed"
+  ) +
+  labs(
+    title = "Average Estimated Mean Across All Samples",
+    x = "True Population Mean",
+    y = "Average Estimated Mean"
+  )
+```
+
+The average estimated population mean across all simulated samples closely follows 
+the true population mean. For example, when the true mean is 1, the average estimate 
+is 0.992, and when the true mean is 6, the average estimate is 6.001. 
+Across all seven groups, the estimates lie very close to the reference line (y = x), 
+with the largest absolute difference from the true mean being only 0.031. 
+These findings are consistent with the unbiasedness of the sample mean, 
+while the small deviations from the true values can be attributed to 
+Monte Carlo variability from a finite number of simulations.
+
+
+
+## Average Estimated Mean Among Significant Tests
+```{r p3-07-significant-estimates}
+significant_estimates_df =
+  simulation_results |>
+  filter(reject_null) |>
+  group_by(true_mu) |>
+  summarize(
+    avg_mu_hat_significant = mean(estimate),
+    n_significant = n(),
+    .groups = "drop"
+  )
+
+significant_estimates_df |>
+  knitr::kable(digits = 3)
+```
+
+
+```{r p3-08-significant-plot, fig.width=8, fig.height=5}
+significant_estimates_df |>
+  ggplot(
+    aes(
+      x = true_mu,
+      y = avg_mu_hat_significant
+    )
+  ) +
+  geom_line() +
+  geom_point() +
+  geom_abline(
+    intercept = 0,
+    slope = 1,
+    linetype = "dashed"
+  ) +
+  labs(
+    title = "Average Estimated Mean Among Significant Tests",
+    x = "True Population Mean",
+    y = "Average Estimate Among Significant Tests"
+  )
+```
+
+The average estimated mean among statistically significant tests is not necessarily 
+equal to the true population mean. For smaller positive effect sizes, 
+restricting the analysis to significant results tends to select samples 
+with unusually large observed effects. For example, when the true mean is 1, 
+the average estimate among significant tests is 2.254, compared with 1.031 
+across all samples. Similarly, when the true mean is 2, 
+the average estimate increases from 1.999 across all samples to 2.625 
+among significant tests.
+
+This pattern reflects selection bias introduced by conditioning on 
+statistical significance, rather than bias in the sample mean estimator itself. 
+When the true mean is zero, significant estimates can occur in both directions, 
+so their signed average may remain close to zero (-0.195 in this simulation). 
+As statistical power increases, nearly all samples are retained, 
+and the significant-only estimates become closer to the true population means. 
+When the true mean is 6, all 5,000 simulated tests are significant, 
+resulting in the same average estimate (6.014) for both the full sample 
+and the significant-only sample.
