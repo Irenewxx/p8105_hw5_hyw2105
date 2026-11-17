@@ -1,5 +1,5 @@
 ---
-title: "P8105 Homework 5"
+title: "p8105_hw5_hyw2105"
 author: "Irene Wen"
 output: github_document
 ---
@@ -11,8 +11,8 @@ set.seed(1236)
 ```
 
 
-### Problem 1 — Birthday Paradox Simulation
-## Birthday Simulation Function
+## Problem 1 — Birthday Paradox Simulation
+### Birthday Simulation Function
 ```{r p1-01-birthday-function}
 birthday_sim = function(n) {
 
@@ -29,7 +29,7 @@ birthday_sim = function(n) {
 ```
 
 
-## Estimating the Shared Birthday Probability
+### Estimating the Shared Birthday Probability
 ```{r p1-02-birthday-probability}
 birthday_prob = function(n) {
 
@@ -45,7 +45,7 @@ birthday_prob = function(n) {
 ```
 
 
-## Simulation Results Across Group Sizes
+### Simulation Results Across Group Sizes
 ```{r p1-03-all-group-sizes}
 birthday_df =
   tibble(group_size = 2:50) |>
@@ -58,7 +58,7 @@ birthday_df |>
 ```
 
 
-## Birthday Probability Plot
+### Birthday Probability Plot
 ```{r p1-04-birthday-plot, fig.width=8, fig.height=5}
 birthday_df |>
   ggplot(aes(x = group_size, y = probability)) +
@@ -78,8 +78,8 @@ Although these results may initially seem surprising, the number of possible pai
 increases rapidly as group size grows, making a shared birthday increasingly likely.
 
 
-### Problem 2 — Longitudinal Study and Spaghetti Plot
-## Listing Study Files
+## Problem 2 — Longitudinal Study and Spaghetti Plot
+### Listing Study Files
 ```{r p2-01-file-names}
 subject_files =
   tibble(
@@ -95,7 +95,7 @@ subject_files |>
 ```
 
 
-## Importing and Combining CSV Files
+### Importing and Combining CSV Files
 ```{r p2-02-import-data}
 subject_data =
   subject_files |>
@@ -119,7 +119,7 @@ full_df |>
 ```
 
 
-## Reshaping to Tidy Longitudinal Data
+### Reshaping to Tidy Longitudinal Data
 ```{r p2-04-tidy-data}
 tidy_df =
   full_df |>
@@ -146,7 +146,7 @@ tidy_df |>
 ```
 
 
-## Data Validation
+### Data Validation
 ```{r p2-05-check-data}
 nrow(tidy_df)
 
@@ -164,7 +164,7 @@ tidy_df |>
 ```
 
 
-## Spaghetti Plot
+### Spaghetti Plot
 ```{r p2-06-spaghetti-plot, fig.width=9, fig.height=5}
 tidy_df |>
   ggplot(
@@ -187,7 +187,7 @@ tidy_df |>
 ```
 
 
-## Weekly Mean Outcomes by Study Arm
+### Weekly Mean Outcomes by Study Arm
 ```{r p2-07-weekly-summary}
 week_summary =
   tidy_df |>
@@ -218,8 +218,8 @@ between the two study arms, but the plot alone cannot establish a causal treatme
 
 
 
-### Problem 3 — Statistical Power Simulation
-## Simulation Function
+## Problem 3 — Statistical Power Simulation
+### Simulation Function
 ```{r p3-01-ttest-function}
 sim_ttest = function(n, mu, sigma = 5) {
 
@@ -247,7 +247,7 @@ sim_ttest = function(n, mu, sigma = 5) {
 ```
 
 
-## Simulation Results
+### Simulation Results
 ```{r p3-02-full-simulation}
 simulation_results =
   expand_grid(
@@ -267,7 +267,7 @@ simulation_results =
 ```
 
 
-## Statistical Power
+### Statistical Power
 ```{r p3-03-power-summary}
 power_df =
   simulation_results |>
@@ -297,14 +297,14 @@ The rejection probability increases as the true population mean moves farther
 from the null value of zero. With the sample size (n = 30) and population 
 standard deviation (sigma = 5) held constant, statistical power increases 
 with effect size. When the true mean is zero, the rejection proportion is 0.046, 
-close to the specified significance level of 0.05. As the true mean increases 
-from 1 to 3, statistical power rises from 0.186 to 0.988, reaching 0.990 at a 
-true mean of 4. For larger true means (5 and 6), the estimated power approaches 1, 
+close to the specified significance level of 0.05. As the true mean increases from 1 to 3, 
+statistical power rises from 0.186 to 0.885, reaching 0.988 at a true mean of 4. 
+For larger true means (5 and 6), the estimated power approaches 1 (0.999 and 1.000), 
 indicating a very high probability of rejecting the null hypothesis when it is false.
 
 
 
-## Average Estimated Mean Across All Samples
+### Average Estimated Mean Across All Samples
 ```{r p3-05-all-estimates}
 all_estimates_df =
   simulation_results |>
@@ -340,14 +340,14 @@ The average estimated population mean across all simulated samples closely follo
 the true population mean. For example, when the true mean is 1, the average estimate 
 is 0.992, and when the true mean is 6, the average estimate is 6.001. 
 Across all seven groups, the estimates lie very close to the reference line (y = x), 
-with the largest absolute difference from the true mean being only 0.031. 
-These findings are consistent with the unbiasedness of the sample mean, 
+with the largest absolute difference from the true mean being only about 0.028 
+(at a true mean of 0).These findings are consistent with the unbiasedness of the sample mean, 
 while the small deviations from the true values can be attributed to 
 Monte Carlo variability from a finite number of simulations.
 
 
 
-## Average Estimated Mean Among Significant Tests
+### Average Estimated Mean Among Significant Tests
 ```{r p3-07-significant-estimates}
 significant_estimates_df =
   simulation_results |>
@@ -390,9 +390,9 @@ The average estimated mean among statistically significant tests is not necessar
 equal to the true population mean. For smaller positive effect sizes, 
 restricting the analysis to significant results tends to select samples 
 with unusually large observed effects. For example, when the true mean is 1, 
-the average estimate among significant tests is 2.254, compared with 1.031 
+the average estimate among significant tests is 2.254, compared with 0.992 
 across all samples. Similarly, when the true mean is 2, 
-the average estimate increases from 1.999 across all samples to 2.625 
+the average estimate increases from 2.011 across all samples to 2.625 
 among significant tests.
 
 This pattern reflects selection bias introduced by conditioning on 
@@ -402,5 +402,7 @@ so their signed average may remain close to zero (-0.195 in this simulation).
 As statistical power increases, nearly all samples are retained, 
 and the significant-only estimates become closer to the true population means. 
 When the true mean is 6, all 5,000 simulated tests are significant, 
-resulting in the same average estimate (6.014) for both the full sample 
+resulting in the same average estimate (6.001) for both the full sample 
 and the significant-only sample.
+
+GPT by Open Ai is used in trouble-shooting of the codes in this assignment.
