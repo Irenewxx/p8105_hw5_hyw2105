@@ -405,4 +405,4 @@ When the true mean is 6, all 5,000 simulated tests are significant,
 resulting in the same average estimate (6.001) for both the full sample 
 and the significant-only sample.
 
-GPT by Open Ai is used in trouble-shooting of the codes in this assignment.
+GPT by Open Ai is used in trouble-shooting of the codes and grammatical correction in this assignment.
